@@ -2,10 +2,14 @@
 
 #[macro_use]
 extern crate rocket;
+#[macro_use]
+extern crate rocket_contrib;
+
+use rocket_contrib::json::JsonValue;
 
 #[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
+fn index() -> JsonValue {
+    json!({ "message": "Hello World!"})
 }
 
 fn main() {
