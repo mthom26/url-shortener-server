@@ -8,9 +8,10 @@ extern crate rocket_contrib;
 extern crate serde_derive;
 
 use rocket::State;
+use rocket::response::Redirect;
 use rocket_contrib::json::{JsonValue, Json};
 use rocket_contrib::databases::redis;
-use rocket_contrib::databases::redis::Commands;
+use rocket_contrib::databases::redis::{Commands, RedisResult};
 
 mod hasher;
 use hasher::Hasher;
@@ -26,6 +27,18 @@ struct RequestBody {
 #[get("/")]
 fn index() -> JsonValue {
     json!({ "message": "Hello World!"})
+}
+
+#[get("/<id>")]
+fn get(
+    conn: RedisDb,
+    id: String
+) -> Result<Redirect, JsonValue> {
+    let res: RedisResult<String> = conn.get(&id);
+    match res {
+        Ok(data) => Ok(Redirect::to(format!("{}", data))),
+        Err(_) => Err(json!({ "message": format!("No url found for {}", id) }))
+    }
 }
 
 #[post("/convert", data="<body>")]
@@ -46,6 +59,6 @@ fn main() {
     rocket::ignite()
         .manage(Hasher::new())
         .attach(RedisDb::fairing())
-        .mount("/", routes![index, post_convert])
+        .mount("/", routes![index, post_convert, get])
         .launch();
 }
